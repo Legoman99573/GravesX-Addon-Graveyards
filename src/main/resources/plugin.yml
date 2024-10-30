@@ -1,0 +1,33 @@
+name: ${project.name}
+description: ${project.description}
+version: ${project.version}
+main: dev.cwhead.GravesXAddon.Graveyards
+api-version: 1.13
+prefix: GravesXAddon-Graveyards
+authors:
+  - Ranull
+  - JaySmethers
+  - Legoman99573
+depends:
+  - GravesX
+
+commands:
+  graveyards:
+    description: Graveyards command
+    usage: /graveyards
+    aliases:
+      - graveyard
+      - gravesxgraveyards
+      - gravesxgraveyard
+      - gxgy
+      - ggy
+      - gy
+  graveyardinfo:
+    description: Gets information about a graveyard
+    usage: /graveyardinfo
+    aliases:
+      - graveyardsinfo
+      - gyi
+      - graveyardi
+      - graveyardsi
+      - gyardinfo
