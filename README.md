@@ -1,0 +1,1 @@
+There will not be support for compiling this plugin. You must do so on your own.
