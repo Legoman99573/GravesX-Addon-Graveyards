@@ -1,9 +1,6 @@
 package dev.cwhead.GravesXAddon.events;
 
-import com.ranull.graves.event.GraveAutoLootEvent;
-import com.ranull.graves.event.GraveCreateEvent;
-import com.ranull.graves.event.GraveExplodeEvent;
-import com.ranull.graves.event.GraveLootedEvent;
+import com.ranull.graves.event.*;
 import dev.cwhead.GravesXAddon.Graveyards;
 import dev.cwhead.GravesXAddon.util.GraveSite;
 import org.bukkit.ChatColor;
@@ -87,6 +84,28 @@ public class EntityDeathListener implements Listener {
      */
     @EventHandler (priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onGraveLooted(GraveLootedEvent event) {
+        Location lootedLocation = event.getLocation();
+        String graveyardName = getGraveyardNameAtLocation(lootedLocation);
+
+        if (graveyardName != null) {
+            GraveSite lootedGraveSite = plugin.getCacheManager().getGraveSiteByLocation(graveyardName, lootedLocation);
+
+            if (lootedGraveSite != null) {
+                plugin.getCacheManager().updateGraveSiteOccupancy(graveyardName, lootedLocation, false);
+                lootedGraveSite.setOccupied(false);
+                plugin.getGravesX().debugMessage("Grave looted at " + lootedLocation + " in graveyard " + graveyardName, 2);
+            }
+        }
+    }
+
+    /**
+     * Handles the event when a grave is looted.
+     * Updates the grave site's occupancy status.
+     *
+     * @param event The GraveWalkOverEvent.
+     */
+    @EventHandler (priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onGraveWalkedOver(GraveWalkOverEvent event) {
         Location lootedLocation = event.getLocation();
         String graveyardName = getGraveyardNameAtLocation(lootedLocation);
 

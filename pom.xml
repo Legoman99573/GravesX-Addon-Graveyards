@@ -6,7 +6,7 @@
 
     <groupId>dev.cwhead.GravesXAddon</groupId>
     <artifactId>GravesXAddon-Graveyards</artifactId>
-    <version>4.9.1.1</version>
+    <version>4.9.2.1</version>
     <packaging>jar</packaging>
 
     <name>GravesXAddon-Graveyards</name>
@@ -54,7 +54,7 @@
     <repositories>
         <repository>
             <id>cwhead-gravesx-snapshots</id>
-            <url>https://repo.cwhead.dev/repository/gravesx-snapshots/</url>
+            <url>https://repo.cwhead.dev/repository/maven-releases/</url>
         </repository>
         <repository>
             <id>spigotmc-repo</id>
@@ -76,7 +76,7 @@
         <dependency>
             <groupId>com.ranull</groupId>
             <artifactId>GravesX</artifactId>
-            <version>4.9.5.1-api</version>
+            <version>4.9.6.1-api</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
