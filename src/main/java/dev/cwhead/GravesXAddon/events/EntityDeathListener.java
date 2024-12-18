@@ -120,6 +120,22 @@ public class EntityDeathListener implements Listener {
         }
     }
 
+    @EventHandler (priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onGraveProjectile(GraveProjectileHitEvent event) {
+        Location lootedLocation = event.getLocation();
+        String graveyardName = getGraveyardNameAtLocation(lootedLocation);
+
+        if (graveyardName != null) {
+            GraveSite lootedGraveSite = plugin.getCacheManager().getGraveSiteByLocation(graveyardName, lootedLocation);
+
+            if (lootedGraveSite != null) {
+                plugin.getCacheManager().updateGraveSiteOccupancy(graveyardName, lootedLocation, false);
+                lootedGraveSite.setOccupied(false);
+                plugin.getGravesX().debugMessage("Grave projectile destroyed at " + lootedLocation + " in graveyard " + graveyardName, 2);
+            }
+        }
+    }
+
     /**
      * Handles the event when a grave explodes.
      * Updates the grave site's occupancy status.

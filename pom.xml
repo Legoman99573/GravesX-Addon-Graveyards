@@ -6,7 +6,7 @@
 
     <groupId>dev.cwhead.GravesXAddon</groupId>
     <artifactId>GravesXAddon-Graveyards</artifactId>
-    <version>4.9.2.1</version>
+    <version>4.9.3.1</version>
     <packaging>jar</packaging>
 
     <name>GravesXAddon-Graveyards</name>
@@ -76,7 +76,7 @@
         <dependency>
             <groupId>com.ranull</groupId>
             <artifactId>GravesX</artifactId>
-            <version>4.9.6.1-api</version>
+            <version>4.9.7.1-api</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
