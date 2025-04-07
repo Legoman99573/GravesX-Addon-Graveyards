@@ -8,7 +8,7 @@ authors:
   - Ranull
   - JaySmethers
   - Legoman99573
-depends:
+depend:
   - GravesX
 
 commands:

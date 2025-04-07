@@ -6,7 +6,7 @@
 
     <groupId>dev.cwhead.GravesXAddon</groupId>
     <artifactId>GravesXAddon-Graveyards</artifactId>
-    <version>4.9.3.1</version>
+    <version>4.9.3.2</version>
     <packaging>jar</packaging>
 
     <name>GravesXAddon-Graveyards</name>
