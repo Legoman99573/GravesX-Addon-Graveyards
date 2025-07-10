@@ -135,7 +135,7 @@ public class GraveyardCommand implements CommandExecutor {
 
                 int nextSiteNumber = graveSites.size() + 1;
 
-                GraveSite newGraveSite = new GraveSite(playerLocation.clone().add(0, 1, 0), false);
+                GraveSite newGraveSite = new GraveSite(playerLocation.clone().add(0, 0, 0), false);
                 graveSites.add(newGraveSite);
 
                 if (addGraveSiteToFile(graveyardYmlFile, nextSiteNumber, newGraveSite)) {
