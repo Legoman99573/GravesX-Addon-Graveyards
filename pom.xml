@@ -75,8 +75,8 @@
         </dependency>
         <dependency>
             <groupId>com.ranull</groupId>
-            <artifactId>GravesX</artifactId>
-            <version>4.9.7.1-api</version>
+            <artifactId>GravesX-api</artifactId>
+            <version>4.9.8.1</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
