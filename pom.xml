@@ -70,13 +70,13 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.21-R0.1-SNAPSHOT</version>
+            <version>1.21.7-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.ranull</groupId>
-            <artifactId>GravesX</artifactId>
-            <version>4.9.7.1-api</version>
+            <artifactId>GravesX-api</artifactId>
+            <version>4.9.8.1</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
