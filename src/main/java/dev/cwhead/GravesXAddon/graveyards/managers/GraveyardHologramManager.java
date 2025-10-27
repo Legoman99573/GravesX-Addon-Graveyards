@@ -1,13 +1,13 @@
-package dev.cwhead.GravesXAddon.managers;
+package dev.cwhead.GravesXAddon.graveyards.managers;
 
-import dev.cwhead.GravesXAddon.Graveyards;
+import dev.cwhead.GravesXAddon.graveyards.Graveyards;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.Plugin;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,7 +35,7 @@ public class GraveyardHologramManager {
      */
     public void createHologram(Location base, String playerName) {
         if (base == null || base.getWorld() == null) {
-            plugin.getLogger().warning("[GraveyardHologram] Invalid base location for hologram creation.");
+            plugin.getGravesX().debugMessage("Invalid base location for hologram creation.", 1);
             return;
         }
 
@@ -45,7 +45,7 @@ public class GraveyardHologramManager {
         );
 
         Collections.reverse(lines);
-        Location current = base.clone().add(0.5, 2.25, 0.5);
+        Location current = base.clone().add(0, 0.25, 0);
 
         plugin.getGravesX().debugMessage("Creating hologram for '" + playerName +
                 "' at " + formatLoc(base), 1);
@@ -62,6 +62,9 @@ public class GraveyardHologramManager {
 
             stand.getPersistentDataContainer().set(hologramKey, PersistentDataType.BYTE, (byte) 1);
 
+            stand.addScoreboardTag("graveyardHologram");
+            stand.addScoreboardTag("graveyardHologramLocation" + base.getWorld() + base.getBlockX() + base.getBlockY() + base.getBlockZ());
+
             plugin.getGravesX().debugMessage("Spawned ArmorStand line '" + ChatColor.stripColor(line) +
                     "' at " + formatLoc(current), 1);
 
@@ -74,6 +77,44 @@ public class GraveyardHologramManager {
         plugin.getGravesX().debugMessage("Created hologram for player '" + playerName +
                 "' at base " + formatLoc(base), 1);
 
+    }
+
+    /**
+     * Removes all holograms associated with a specific graveyard location.
+     *
+     * @param base the base block location of the grave site
+     */
+    public void removeHologram(Location base) {
+        if (base == null || base.getWorld() == null) {
+            plugin.getGravesX().debugMessage("Invalid base location for hologram removal.", 2);
+            return;
+        }
+
+        String tag = "graveyardHologramLocation" +
+                base.getWorld().getName() +
+                base.getBlockX() + base.getBlockY() + base.getBlockZ();
+
+        plugin.getGravesX().debugMessage("Attempting to remove holograms for tag '" + tag +
+                "' at " + formatLoc(base), 1);
+
+        int removed = 0;
+        for (Entity entity : base.getWorld().getEntitiesByClass(ArmorStand.class)) {
+            if (entity.getScoreboardTags().contains(tag)) {
+                plugin.getGravesX().debugMessage("Found hologram ArmorStand '" +
+                        ChatColor.stripColor(entity.getCustomName() != null ? entity.getCustomName() : "Unnamed") +
+                        "' at " + formatLoc(entity.getLocation()) + " — removing.", 1);
+
+                entity.remove();
+                removed++;
+            }
+        }
+
+        if (removed == 0) {
+            plugin.getGravesX().debugMessage("No hologram entities found for tag '" + tag + "'.", 2);
+        } else {
+            plugin.getGravesX().debugMessage("Removed " + removed + " hologram entities for tag '" +
+                    tag + "' at " + formatLoc(base), 1);
+        }
     }
 
     private static String formatLoc(Location loc) {

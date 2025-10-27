@@ -1,8 +1,8 @@
-package dev.cwhead.GravesXAddon.commands;
+package dev.cwhead.GravesXAddon.graveyards.commands;
 
-import dev.cwhead.GravesXAddon.Graveyards;
-import dev.cwhead.GravesXAddon.util.ConfigUtil;
-import dev.cwhead.GravesXAddon.util.GraveSite;
+import dev.cwhead.GravesXAddon.graveyards.Graveyards;
+import dev.cwhead.GravesXAddon.graveyards.util.ConfigUtil;
+import dev.cwhead.GravesXAddon.graveyards.util.GraveSite;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -115,7 +115,7 @@ public class GraveyardCommand implements CommandExecutor {
                 // **New:** Compute next site number from file, not cache
                 int nextSiteNumber = configUtil.getNextSiteNumber(graveyardName);
 
-                Location gravesiteLocation = playerLocation.clone().add(0, 1, 0);
+                Location gravesiteLocation = playerLocation.clone();
                 boolean saved = configUtil.saveGraveSite(graveyardName, nextSiteNumber, gravesiteLocation, false);
 
                 if (saved) {

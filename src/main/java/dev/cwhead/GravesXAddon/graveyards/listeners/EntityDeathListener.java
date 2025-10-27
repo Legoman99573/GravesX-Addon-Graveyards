@@ -1,13 +1,10 @@
-package dev.cwhead.GravesXAddon.events;
+package dev.cwhead.GravesXAddon.graveyards.listeners;
 
 import dev.cwhead.GravesX.event.GraveCreateEvent;
-import dev.cwhead.GravesXAddon.Graveyards;
-import dev.cwhead.GravesXAddon.managers.GraveyardHologramManager;
-import dev.cwhead.GravesXAddon.util.GraveSite;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import dev.cwhead.GravesXAddon.graveyards.Graveyards;
+import dev.cwhead.GravesXAddon.graveyards.managers.GraveyardHologramManager;
+import dev.cwhead.GravesXAddon.graveyards.util.GraveSite;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Skull;
@@ -17,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.profile.PlayerTextures;
 
@@ -27,10 +25,13 @@ import java.util.*;
 public class EntityDeathListener implements Listener {
 
     private final Graveyards plugin;
+    private final NamespacedKey graveHeadKey;
 
     public EntityDeathListener(Graveyards plugin) {
         this.plugin = plugin;
+        graveHeadKey = new NamespacedKey(plugin, "GraveyardHead");
     }
+
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onGraveCreate(GraveCreateEvent event) throws MalformedURLException {
         if (event.getEntity() instanceof Player player) {
@@ -53,7 +54,7 @@ public class EntityDeathListener implements Listener {
                     Entity killer = player.getKiller();
                     EntityType killerEntityType = killer != null ? killer.getType() : null;
 
-                    Location holoLoc = selectedGraveSite.getLocation().clone().add(0.5, 2.25, 0.5);
+                    Location holoLoc = selectedGraveSite.getLocation().clone().add(0.5, 0.5, 0.5);
                     new GraveyardHologramManager(plugin).createHologram(holoLoc, player.getName());
                     Block skullBlock = selectedGraveSite.getLocation().getBlock();
                     skullBlock.setType(Material.PLAYER_HEAD);
@@ -71,6 +72,7 @@ public class EntityDeathListener implements Listener {
                         profile.setTextures(textures);
 
                         skull.setOwnerProfile(profile);
+                        skull.getPersistentDataContainer().set(graveHeadKey, PersistentDataType.BYTE, (byte) 1);
                         skull.update(false, false);
                     }
 

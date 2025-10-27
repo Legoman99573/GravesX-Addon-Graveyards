@@ -1,7 +1,7 @@
-package dev.cwhead.GravesXAddon.tabcomplete;
+package dev.cwhead.GravesXAddon.graveyards.tabcomplete;
 
-import dev.cwhead.GravesXAddon.Graveyards;
-import dev.cwhead.GravesXAddon.util.ConfigUtil;
+import dev.cwhead.GravesXAddon.graveyards.Graveyards;
+import dev.cwhead.GravesXAddon.graveyards.util.ConfigUtil;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;

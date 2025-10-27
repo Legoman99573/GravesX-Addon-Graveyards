@@ -1,7 +1,7 @@
 name: ${project.name}
 description: ${project.description}
 version: ${project.version}
-main: dev.cwhead.GravesXAddon.Graveyards
+main: dev.cwhead.GravesXAddon.graveyards.Graveyards
 api-version: 1.13
 prefix: GravesXAddon-Graveyards
 authors:

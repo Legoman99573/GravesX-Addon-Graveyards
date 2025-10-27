@@ -1,4 +1,4 @@
-package dev.cwhead.GravesXAddon.util;
+package dev.cwhead.GravesXAddon.graveyards.util;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;

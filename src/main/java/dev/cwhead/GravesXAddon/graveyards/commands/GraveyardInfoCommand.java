@@ -1,7 +1,7 @@
-package dev.cwhead.GravesXAddon.commands;
+package dev.cwhead.GravesXAddon.graveyards.commands;
 
-import dev.cwhead.GravesXAddon.Graveyards;
-import dev.cwhead.GravesXAddon.util.GraveSite;
+import dev.cwhead.GravesXAddon.graveyards.Graveyards;
+import dev.cwhead.GravesXAddon.graveyards.util.GraveSite;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.Command;

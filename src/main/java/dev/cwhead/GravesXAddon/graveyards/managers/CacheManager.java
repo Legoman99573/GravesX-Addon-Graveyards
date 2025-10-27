@@ -1,8 +1,8 @@
-package dev.cwhead.GravesXAddon.managers;
+package dev.cwhead.GravesXAddon.graveyards.managers;
 
-import dev.cwhead.GravesXAddon.Graveyards;
-import dev.cwhead.GravesXAddon.util.ConfigUtil;
-import dev.cwhead.GravesXAddon.util.GraveSite;
+import dev.cwhead.GravesXAddon.graveyards.Graveyards;
+import dev.cwhead.GravesXAddon.graveyards.util.ConfigUtil;
+import dev.cwhead.GravesXAddon.graveyards.util.GraveSite;
 import org.bukkit.Location;
 import org.bukkit.World;
 

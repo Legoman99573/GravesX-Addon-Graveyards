@@ -1,14 +1,14 @@
-package dev.cwhead.GravesXAddon;
+package dev.cwhead.GravesXAddon.graveyards;
 
 import com.ranull.graves.Graves;
 import dev.cwhead.GravesX.api.GravesXAPI;
-import dev.cwhead.GravesXAddon.commands.GraveyardCommand;
-import dev.cwhead.GravesXAddon.commands.GraveyardInfoCommand;
-import dev.cwhead.GravesXAddon.events.EntityDeathListener;
-import dev.cwhead.GravesXAddon.managers.CacheManager;
-import dev.cwhead.GravesXAddon.tabcomplete.GraveyardInfoTabCompleter;
-import dev.cwhead.GravesXAddon.tabcomplete.GraveyardTabCompleter;
-import dev.cwhead.GravesXAddon.util.ConfigUtil;
+import dev.cwhead.GravesXAddon.graveyards.commands.GraveyardCommand;
+import dev.cwhead.GravesXAddon.graveyards.commands.GraveyardInfoCommand;
+import dev.cwhead.GravesXAddon.graveyards.listeners.*;
+import dev.cwhead.GravesXAddon.graveyards.managers.CacheManager;
+import dev.cwhead.GravesXAddon.graveyards.tabcomplete.GraveyardInfoTabCompleter;
+import dev.cwhead.GravesXAddon.graveyards.tabcomplete.GraveyardTabCompleter;
+import dev.cwhead.GravesXAddon.graveyards.util.ConfigUtil;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -43,6 +43,10 @@ public final class Graveyards extends JavaPlugin {
             gravesXAPI = new GravesXAPI((Graves) gravesX);
             getLogger().info("Hooked into GravesX. Deaths in graveyards will be handled by this plugin.");
             getServer().getPluginManager().registerEvents(new EntityDeathListener(this), this);
+            getServer().getPluginManager().registerEvents(new BlockBreakListener(this), this);
+            getServer().getPluginManager().registerEvents(new BucketListener(this), this);
+            getServer().getPluginManager().registerEvents(new ExplosionListener(this), this);
+            getServer().getPluginManager().registerEvents(new BlockPlaceListener(this), this);
 
             getCacheManager().loadAllGraveyards();
             getLogger().info("Loaded GravesX Addon: Graveyards");
