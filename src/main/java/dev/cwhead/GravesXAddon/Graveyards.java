@@ -33,8 +33,8 @@ public final class Graveyards extends JavaPlugin {
         Plugin gravesX = getServer().getPluginManager().getPlugin("GravesX");
         if (gravesX != null && gravesX.isEnabled()) {
             instance = this;
-            this.cacheManager = new CacheManager(this);  // Set the instance
             this.configUtil = new ConfigUtil(this);
+            this.cacheManager = new CacheManager(this);  // Set the instance
             getCommand("graveyards").setExecutor(new GraveyardCommand(this));
             getCommand("graveyardinfo").setExecutor(new GraveyardInfoCommand(this));
             getCommand("graveyardinfo").setTabCompleter(new GraveyardInfoTabCompleter(this));

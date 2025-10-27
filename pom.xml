@@ -33,6 +33,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.5.3</version>
+                <configuration>
+                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                    <relocations>
+                        <relocation>
+                            <pattern>com.github.Anon8281.universalScheduler</pattern>
+                            <shadedPattern>com.ranull.graves.libraries.universalScheduler</shadedPattern>
+                        </relocation>
+                    </relocations>
+                </configuration>
                 <executions>
                     <execution>
                         <phase>package</phase>
