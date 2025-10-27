@@ -1,7 +1,7 @@
 package dev.cwhead.GravesXAddon;
 
 import com.ranull.graves.Graves;
-import dev.cwhead.GravesX.GravesXAPI;
+import dev.cwhead.GravesX.api.GravesXAPI;
 import dev.cwhead.GravesXAddon.commands.GraveyardCommand;
 import dev.cwhead.GravesXAddon.commands.GraveyardInfoCommand;
 import dev.cwhead.GravesXAddon.events.EntityDeathListener;
@@ -19,7 +19,6 @@ public final class Graveyards extends JavaPlugin {
 
     private static Graveyards instance;
     private GravesXAPI gravesXAPI;
-    private Graves graves;
     private CacheManager cacheManager;
 
     /**
@@ -39,7 +38,6 @@ public final class Graveyards extends JavaPlugin {
             getCommand("graveyards").setTabCompleter(new GraveyardTabCompleter(this));
 
             gravesXAPI = new GravesXAPI((Graves) gravesX);
-            graves = (Graves) getServer().getPluginManager().getPlugin("GravesX");
             getLogger().info("Hooked into GravesX. Deaths in graveyards will be handled by this plugin.");
             getServer().getPluginManager().registerEvents(new EntityDeathListener(this), this);
 
@@ -74,7 +72,7 @@ public final class Graveyards extends JavaPlugin {
      * @return The Graves plugin instance.
      */
     public Graves getGravesX() {
-        return gravesXAPI.getGravesX();
+        return getGravesXAPI().plugin();
     }
 
     /**

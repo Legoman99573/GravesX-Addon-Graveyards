@@ -1,6 +1,6 @@
 package dev.cwhead.GravesXAddon.events;
 
-import com.ranull.graves.event.GraveCreateEvent;
+import dev.cwhead.GravesX.event.GraveCreateEvent;
 import dev.cwhead.GravesXAddon.Graveyards;
 import dev.cwhead.GravesXAddon.managers.GraveyardHologramManager;
 import dev.cwhead.GravesXAddon.util.GraveSite;
@@ -22,9 +22,7 @@ import org.bukkit.profile.PlayerTextures;
 
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class EntityDeathListener implements Listener {
 
@@ -35,8 +33,7 @@ public class EntityDeathListener implements Listener {
     }
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onGraveCreate(GraveCreateEvent event) throws MalformedURLException {
-        if (event.getEntity() instanceof Player) {
-            Player player = (Player) event.getEntity();
+        if (event.getEntity() instanceof Player player) {
             String graveyardName = getAnyAvailableGraveyard();
             if (graveyardName != null) {
                 List<GraveSite> graveSites = plugin.getCacheManager().getGraveSites(graveyardName);
@@ -44,7 +41,7 @@ public class EntityDeathListener implements Listener {
 
                 List<GraveSite> availableGraveSites = graveSites.stream()
                         .filter(graveSite -> !graveSite.isOccupied())
-                        .collect(Collectors.toList());
+                        .toList();
 
                 if (!availableGraveSites.isEmpty()) {
                     selectedGraveSite = availableGraveSites.get(new Random().nextInt(availableGraveSites.size()));
@@ -63,8 +60,7 @@ public class EntityDeathListener implements Listener {
                     skullBlock.setType(Material.PLAYER_HEAD);
 
                     BlockState state = skullBlock.getState();
-                    if (state instanceof Skull) {
-                        Skull skull = (Skull) state;
+                    if (state instanceof Skull skull) {
                         URI url = URI.create("http://textures.minecraft.net/texture/b7cab56c82cb81bdb9979a464bc9d3ba3e6722ba122cf6c52873010a2b59aefe");
 
                         // Create a blank profile (can use random UUID)
