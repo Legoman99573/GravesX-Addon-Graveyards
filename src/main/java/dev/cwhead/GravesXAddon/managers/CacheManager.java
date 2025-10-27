@@ -1,17 +1,13 @@
 package dev.cwhead.GravesXAddon.managers;
 
 import dev.cwhead.GravesXAddon.Graveyards;
+import dev.cwhead.GravesXAddon.util.ConfigUtil;
 import dev.cwhead.GravesXAddon.util.GraveSite;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.World;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Manages the caching and loading of graveyard data from YAML configuration files.
@@ -22,16 +18,18 @@ public class CacheManager {
     private final Map<String, List<GraveSite>> graveyardCache = new HashMap<>();
     private final File graveyardFolder;
     private final Graveyards plugin;
+    private final ConfigUtil configUtil;
 
     /**
-     * Constructs a CacheManager for the specified plugin instance, initializing
-     * the folder for storing graveyard configuration files if it does not exist.
+     * Constructs a CacheManager for the specified plugin instance.
+     * Uses ConfigUtil for the fixed addon folder (/plugins/GravesX/addon/Graveyards).
      *
      * @param plugin the main plugin class instance used to access plugin resources.
      */
     public CacheManager(Graveyards plugin) {
         this.plugin = plugin;
-        this.graveyardFolder = new File(plugin.getDataFolder(), "Graveyards");
+        this.configUtil = plugin.getConfigUtil();
+        this.graveyardFolder = configUtil.getGraveyardFolder();
         if (!graveyardFolder.exists()) {
             graveyardFolder.mkdirs();
         }
@@ -39,98 +37,58 @@ public class CacheManager {
 
     /**
      * Loads all graveyards asynchronously from YAML configuration files into the cache.
-     * This method logs the loading process and populates the graveyard cache with
-     * grave sites and their occupancy status.
+     * Populates the graveyard cache with grave sites and their occupancy status.
      */
     public void loadAllGraveyards() {
-        Bukkit.getScheduler().runTaskAsynchronously(Graveyards.getInstance(), () -> {
+        plugin.getGravesX().getGravesXScheduler().runTaskAsynchronously(() -> {
             plugin.getLogger().info("Loading Graveyards...");
-            File[] graveyardFiles = graveyardFolder.listFiles((dir, name) -> name.endsWith(".yml"));
 
-            if (graveyardFiles == null) {
-                plugin.getLogger().warning("No graveyard files found.");
-                return;
+            Map<String, List<GraveSite>> nextCache = configUtil.readAllGraveyards();
+
+            if (nextCache.isEmpty()) {
+                plugin.getLogger().warning("No graveyard files found in: " + graveyardFolder.getAbsolutePath());
             }
 
-            for (File graveyardFile : graveyardFiles) {
-                YamlConfiguration config = YamlConfiguration.loadConfiguration(graveyardFile);
-
-                String graveyardName = config.getString("name");
-                if (graveyardName == null) {
-                    plugin.getLogger().warning("Graveyard name not found in file: " + graveyardFile.getName());
-                    continue;
-                }
-
-                List<GraveSite> graveSites = new ArrayList<>();
-                if (config.isConfigurationSection("gravesite")) {
-                    for (String key : config.getConfigurationSection("gravesite").getKeys(false)) {
-                        String worldName = config.getString("gravesite." + key + ".world");
-                        double x = config.getDouble("gravesite." + key + ".x");
-                        double y = config.getDouble("gravesite." + key + ".y");
-                        double z = config.getDouble("gravesite." + key + ".z");
-                        boolean occupied = config.getBoolean("gravesite." + key + ".occupied", false);
-
-                        if (worldName != null) {
-                            Location location = new Location(Bukkit.getWorld(worldName), x, y, z);
-                            graveSites.add(new GraveSite(location, occupied));
-                            plugin.getLogger().info("Loaded grave site: " + key + " at " + location + " (occupied: " + occupied + ")");
-                        } else {
-                            plugin.getLogger().warning("World not found for grave site: " + key);
-                        }
-                    }
-                }
-                graveyardCache.put(graveyardName, graveSites);
-            }
-            Bukkit.getScheduler().runTask(Graveyards.getInstance(), () -> {
+            plugin.getGravesX().getGravesXScheduler().runTask(() -> {
+                graveyardCache.clear();
+                graveyardCache.putAll(nextCache);
                 plugin.getLogger().info("Loaded " + getGraveyardCacheSize() + " graveyards.");
             });
         });
     }
 
     /**
-     * Updates the occupancy status of a grave site in the specified graveyard.
-     * This method also updates the corresponding YAML configuration file to reflect the change.
+     * Updates the occupancy status of a grave site in the specified graveyard,
+     * both in cache and on disk. Compares locations using block coordinates.
      *
      * @param graveyardName the name of the graveyard containing the grave site.
-     * @param location the location of the grave site to be updated.
+     * @param location the location of the grave site to be updated (any yaw/pitch/decimals allowed).
      * @param occupied the new occupancy status of the grave site.
      */
     public void updateGraveSiteOccupancy(String graveyardName, Location location, boolean occupied) {
+        Location target = toBlockLocation(location);
+
         List<GraveSite> graveSites = getGraveSites(graveyardName);
-
+        boolean foundInCache = false;
         for (GraveSite graveSite : graveSites) {
-            plugin.getGravesX().debugMessage("Looking for grave site in " + graveyardName + " for location " + location.toString(),2);
-            if (graveSite.getLocation().equals(location)) {
+            if (sameBlock(graveSite.getLocation(), target)) {
                 graveSite.setOccupied(occupied);
-
-                File graveyardFile = new File(plugin.getDataFolder(), "Graveyards/" + graveyardName + ".yml");
-                YamlConfiguration config = YamlConfiguration.loadConfiguration(graveyardFile);
-
-                for (String key : config.getConfigurationSection("gravesite").getKeys(false)) {
-                    Location configLocation = new Location(
-                            Bukkit.getWorld(config.getString("gravesite." + key + ".world")),
-                            config.getLong("gravesite." + key + ".x"),
-                            config.getLong("gravesite." + key + ".y"),
-                            config.getLong("gravesite." + key + ".z")
-                    );
-
-                    if (configLocation.equals(location)) {
-                        config.set("gravesite." + key + ".occupied", occupied);
-                        break;
-                    }
-                }
-
-                try {
-                    config.save(graveyardFile);
-                    plugin.getGravesX().debugMessage("Grave site location " + location + " found and updated in " + graveyardName, 1);
-                } catch (IOException e) {
-                    plugin.getLogger().severe("Could not save updated graveyard file for " + graveyardName);
-                    e.printStackTrace();
-                }
+                foundInCache = true;
                 break;
-            } else {
-                plugin.getGravesX().debugMessage("Grave site location " + location + " not found in " + graveyardName, 2);
             }
+        }
+        if (!foundInCache) {
+            plugin.getGravesX().debugMessage(
+                    "Grave site location " + target + " not found in cache for " + graveyardName, 2);
+        }
+
+        boolean updated = configUtil.setGraveSiteOccupiedByLocation(graveyardName, target, occupied);
+        if (updated) {
+            plugin.getGravesX().debugMessage(
+                    "Grave site location " + target + " updated on disk in " + graveyardName, 1);
+        } else {
+            plugin.getGravesX().debugMessage(
+                    "Grave site location " + target + " NOT found on disk for " + graveyardName, 2);
         }
     }
 
@@ -146,15 +104,16 @@ public class CacheManager {
 
     /**
      * Retrieves a specific grave site by its location within the specified graveyard.
+     * Matches by block coordinates.
      *
      * @param graveyardName the name of the graveyard.
      * @param location the location of the grave site.
      * @return the {@link GraveSite} if found, or null if not found.
      */
     public GraveSite getGraveSiteByLocation(String graveyardName, Location location) {
-        List<GraveSite> graveSites = getGraveSites(graveyardName);
-        for (GraveSite graveSite : graveSites) {
-            if (graveSite.getLocation().equals(location)) {
+        Location target = toBlockLocation(location);
+        for (GraveSite graveSite : getGraveSites(graveyardName)) {
+            if (sameBlock(graveSite.getLocation(), target)) {
                 return graveSite;
             }
         }
@@ -176,9 +135,7 @@ public class CacheManager {
     public void reloadCache() {
         try {
             graveyardCache.clear();
-        } catch (Exception ignored) {
-            // Ignore exceptions during cache clearing
-        }
+        } catch (Exception ignored) {}
         loadAllGraveyards();
     }
 
@@ -189,5 +146,20 @@ public class CacheManager {
      */
     public int getGraveyardCacheSize() {
         return graveyardCache.size();
+    }
+
+    private static boolean sameBlock(Location a, Location b) {
+        if (a == null || b == null) return false;
+        if (a.getWorld() == null || b.getWorld() == null) return false;
+        return Objects.equals(a.getWorld().getName(), b.getWorld().getName())
+                && a.getBlockX() == b.getBlockX()
+                && a.getBlockY() == b.getBlockY()
+                && a.getBlockZ() == b.getBlockZ();
+    }
+
+    private static Location toBlockLocation(Location loc) {
+        if (loc == null) return null;
+        World w = loc.getWorld();
+        return new Location(w, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 }

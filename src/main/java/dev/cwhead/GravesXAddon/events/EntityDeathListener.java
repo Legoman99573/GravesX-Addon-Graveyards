@@ -53,7 +53,6 @@ public class EntityDeathListener implements Listener {
                     Entity killer = player.getKiller();
                     EntityType killerEntityType = killer != null ? killer.getType() : null;
 
-                    // Create decorative empty grave at symbolic graveyard site
                     Location holoLoc = selectedGraveSite.getLocation().clone().add(0.5, 2.25, 0.5);
                     new GraveyardHologramManager(plugin).createHologram(holoLoc, player.getName());
                     Block skullBlock = selectedGraveSite.getLocation().getBlock();
@@ -85,73 +84,6 @@ public class EntityDeathListener implements Listener {
             }
         }
     }
-
-//    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-//    public void onEntityDeath(EntityDeathEvent event) {
-//        if (event.getEntity() instanceof Player) {
-//            Player player = (Player) event.getEntity();
-//            String graveyardName = getAnyAvailableGraveyard();
-//
-//            if (graveyardName != null) {
-//                List<GraveSite> graveSites = plugin.getCacheManager().getGraveSites(graveyardName);
-//                GraveSite selectedGraveSite = null;
-//
-//                List<GraveSite> availableGraveSites = graveSites.stream()
-//                        .filter(graveSite -> !graveSite.isOccupied())
-//                        .collect(Collectors.toList());
-//
-//                if (!availableGraveSites.isEmpty()) {
-//                    selectedGraveSite = availableGraveSites.get(new Random().nextInt(availableGraveSites.size()));
-//                } else {
-//                    player.sendMessage(ChatColor.GRAY + "☠ " + ChatColor.RED + "No available grave sites found in the graveyard " + ChatColor.GOLD + graveyardName);
-//                    plugin.getGravesX().debugMessage("No available grave sites for player " + player.getName(), 2);
-//                }
-//
-//                if (selectedGraveSite != null) {
-//                    player.getInventory().clear();
-//                    Entity killer = player.getKiller();
-//                    EntityType killerEntityType = killer != null ? killer.getType() : null;
-//                    int experience = player.getTotalExperience();
-//                    long timeAliveRemaining = 10000;
-//                    Map<EquipmentSlot, ItemStack> equipmentMap = new EnumMap<>(EquipmentSlot.class);
-//                    List<ItemStack> itemStackList = event.getDrops();
-//                    EntityDamageEvent.DamageCause damageCause = (player.getLastDamageCause() != null) ?
-//                            player.getLastDamageCause().getCause() : EntityDamageEvent.DamageCause.CUSTOM;
-//                    boolean graveProtection = true;
-//                    long graveProtectionTime = 10000;
-//
-//                    // Create real grave at death location
-//                    Location deathLoc = player.getLocation();
-//                    plugin.getGravesXAPI().createGrave(
-//                            player, killer, killerEntityType, deathLoc,
-//                            equipmentMap, itemStackList, experience, timeAliveRemaining,
-//                            damageCause, graveProtection, graveProtectionTime
-//                    );
-//
-//                    // Create decorative empty grave at symbolic graveyard site
-//                    Location holoLoc = selectedGraveSite.getLocation().clone().add(0.5, 2.25, 0.5);
-//                    new GraveyardHologramManager(plugin).createHologram(holoLoc, player.getName());
-//                    selectedGraveSite.getLocation().getBlock().setType(Material.SKELETON_SKULL);
-//
-//                    plugin.getCacheManager().updateGraveSiteOccupancy(graveyardName, selectedGraveSite.getLocation(), true);
-//                    selectedGraveSite.setOccupied(true);
-//
-//                    // Mark decorative site as occupied
-//                    plugin.getCacheManager().updateGraveSiteOccupancy(graveyardName, selectedGraveSite.getLocation(), true);
-//                    selectedGraveSite.setOccupied(true);
-//
-//                    player.sendMessage(ChatColor.GRAY + "☠ " + ChatColor.RED + "A symbolic grave was created in " + ChatColor.GOLD + graveyardName);
-//                    plugin.getGravesX().debugMessage("Decorative grave created for " + player.getName() + " at " + selectedGraveSite.getLocation(), 2);
-//                    event.getDrops().clear();
-//                } else {
-//                    for (ItemStack item : event.getDrops()) {
-//                        player.getWorld().dropItemNaturally(player.getLocation(), item);
-//                    }
-//                    event.getDrops().clear();
-//                }
-//            }
-//        }
-//    }
 
     private String getAnyAvailableGraveyard() {
         for (Map.Entry<String, List<GraveSite>> entry : plugin.getCacheManager().getAllGraveyards().entrySet()) {

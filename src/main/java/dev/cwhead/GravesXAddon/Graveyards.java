@@ -8,6 +8,7 @@ import dev.cwhead.GravesXAddon.events.EntityDeathListener;
 import dev.cwhead.GravesXAddon.managers.CacheManager;
 import dev.cwhead.GravesXAddon.tabcomplete.GraveyardInfoTabCompleter;
 import dev.cwhead.GravesXAddon.tabcomplete.GraveyardTabCompleter;
+import dev.cwhead.GravesXAddon.util.ConfigUtil;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -20,6 +21,7 @@ public final class Graveyards extends JavaPlugin {
     private static Graveyards instance;
     private GravesXAPI gravesXAPI;
     private CacheManager cacheManager;
+    private ConfigUtil configUtil;
 
     /**
      * Called when the plugin is enabled.
@@ -32,6 +34,7 @@ public final class Graveyards extends JavaPlugin {
         if (gravesX != null && gravesX.isEnabled()) {
             instance = this;
             this.cacheManager = new CacheManager(this);  // Set the instance
+            this.configUtil = new ConfigUtil(this);
             getCommand("graveyards").setExecutor(new GraveyardCommand(this));
             getCommand("graveyardinfo").setExecutor(new GraveyardInfoCommand(this));
             getCommand("graveyardinfo").setTabCompleter(new GraveyardInfoTabCompleter(this));
@@ -91,5 +94,9 @@ public final class Graveyards extends JavaPlugin {
      */
     public CacheManager getCacheManager() {
         return cacheManager;
+    }
+
+    public ConfigUtil getConfigUtil() {
+        return configUtil;
     }
 }
