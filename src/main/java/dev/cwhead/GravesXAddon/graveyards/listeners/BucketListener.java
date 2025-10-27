@@ -36,9 +36,7 @@ public class BucketListener implements Listener {
         Block target = event.getBlockClicked().getRelative(event.getBlockFace());
         if (isProtectedGraveHead(target)) {
             event.setCancelled(true);
-            if (event.getPlayer() != null) {
-                event.getPlayer().sendMessage("§7☠ §cYou cannot pour water on a grave head.");
-            }
+            event.getPlayer().sendMessage("§7☠ §cYou cannot pour water on a grave head.");
             plugin.getGravesX().debugMessage(
                     "Cancelled water placement on protected grave head at [x=" + target.getX() +
                             ", y=" + target.getY() + ", z=" + target.getZ() + ", world=" +

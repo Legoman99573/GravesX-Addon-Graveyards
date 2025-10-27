@@ -1,9 +1,12 @@
 package dev.cwhead.GravesXAddon.graveyards.listeners;
 
+import com.ranull.graves.type.Grave;
+import dev.cwhead.GravesX.api.skin.SkinAPI;
 import dev.cwhead.GravesX.event.GraveCreateEvent;
 import dev.cwhead.GravesXAddon.graveyards.Graveyards;
 import dev.cwhead.GravesXAddon.graveyards.managers.GraveyardHologramManager;
 import dev.cwhead.GravesXAddon.graveyards.util.GraveSite;
+import dev.cwhead.GravesXAddon.graveyards.util.ConfigUtil;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -15,76 +18,124 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.profile.PlayerProfile;
-import org.bukkit.profile.PlayerTextures;
 
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.util.*;
 
 public class EntityDeathListener implements Listener {
 
     private final Graveyards plugin;
     private final NamespacedKey graveHeadKey;
+    private final GraveyardHologramManager holograms;
 
     public EntityDeathListener(Graveyards plugin) {
         this.plugin = plugin;
-        graveHeadKey = new NamespacedKey(plugin, "GraveyardHead");
+        this.graveHeadKey = new NamespacedKey(plugin, "GraveyardHead");
+        this.holograms = new GraveyardHologramManager(plugin);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onGraveCreate(GraveCreateEvent event) throws MalformedURLException {
-        if (event.getEntity() instanceof Player player) {
-            String graveyardName = getAnyAvailableGraveyard();
-            if (graveyardName != null) {
-                List<GraveSite> graveSites = plugin.getCacheManager().getGraveSites(graveyardName);
-                GraveSite selectedGraveSite = null;
+    public void onGraveCreate(GraveCreateEvent event) {
+        if (!event.isEntityActuallyPlayer())
+            return; // We are only doing players. Entity Graves do not count.
 
-                List<GraveSite> availableGraveSites = graveSites.stream()
-                        .filter(graveSite -> !graveSite.isOccupied())
-                        .toList();
+        Player player = event.getPlayer();
 
-                if (!availableGraveSites.isEmpty()) {
-                    selectedGraveSite = availableGraveSites.get(new Random().nextInt(availableGraveSites.size()));
-                } else {
-                    player.sendMessage(ChatColor.GRAY + "☠ " + ChatColor.RED + "No available grave sites found in the graveyard " + ChatColor.GOLD + graveyardName);
-                    plugin.getGravesX().debugMessage("No available grave sites for player " + player.getName(), 2);
-                }
-                if (selectedGraveSite != null) {
-                    Entity killer = player.getKiller();
-                    EntityType killerEntityType = killer != null ? killer.getType() : null;
+        String graveyardName = getAnyAvailableGraveyard();
+        if (graveyardName == null) {
+            graveyardName = pickAnyGraveyardName();
+            if (graveyardName == null) {
+                return;
+            }
+            resetAllSitesIn(graveyardName);
+        }
 
-                    Location holoLoc = selectedGraveSite.getLocation().clone().add(0.5, 0.5, 0.5);
-                    new GraveyardHologramManager(plugin).createHologram(holoLoc, player.getName());
-                    Block skullBlock = selectedGraveSite.getLocation().getBlock();
-                    skullBlock.setType(Material.PLAYER_HEAD);
+        List<GraveSite> graveSites = plugin.getCacheManager().getGraveSites(graveyardName);
+        if (graveSites == null || graveSites.isEmpty()) {
+            return;
+        }
 
-                    BlockState state = skullBlock.getState();
-                    if (state instanceof Skull skull) {
-                        URI url = URI.create("http://textures.minecraft.net/texture/b7cab56c82cb81bdb9979a464bc9d3ba3e6722ba122cf6c52873010a2b59aefe");
+        // Build list of available sites
+        List<GraveSite> availableGraveSites = graveSites.stream()
+                .filter(gs -> !gs.isOccupied())
+                .toList();
 
-                        // Create a blank profile (can use random UUID)
-                        PlayerProfile profile = Bukkit.createPlayerProfile(UUID.randomUUID());
+        ConfigUtil cfg = plugin.getConfigUtil();
 
-                        // Set the texture
-                        PlayerTextures textures = profile.getTextures();
-                        textures.setSkin(url.toURL());
-                        profile.setTextures(textures);
+        GraveSite selectedGraveSite;
+        if (!availableGraveSites.isEmpty()) {
+            selectedGraveSite = availableGraveSites.get(new Random().nextInt(availableGraveSites.size()));
+        } else {
+            plugin.getGravesX().debugMessage("All grave sites occupied in '" + graveyardName + "'. Resetting all to unoccupied.", 1);
+            resetAllSitesIn(graveyardName);
 
-                        skull.setOwnerProfile(profile);
-                        skull.getPersistentDataContainer().set(graveHeadKey, PersistentDataType.BYTE, (byte) 1);
-                        skull.update(false, false);
+            List<GraveSite> nowAvailable = plugin.getCacheManager().getGraveSites(graveyardName).stream()
+                    .filter(gs -> !gs.isOccupied())
+                    .toList();
+
+            if (nowAvailable.isEmpty()) {
+                String failMsg = cfg.getMessage("graveyard-place-failed").replace("%graveyard%", graveyardName);
+                player.sendMessage(failMsg);
+                return;
+            }
+            selectedGraveSite = nowAvailable.get(new Random().nextInt(nowAvailable.size()));
+        }
+
+        Entity killer = player.getKiller();
+        EntityType killerEntityType = killer != null ? killer.getType() : null;
+
+        Location holoLoc = selectedGraveSite.getLocation().clone().add(0.5, 0.5, 0.5);
+        holograms.createHologram(holoLoc, player.getName(), killer, killerEntityType);
+
+        Block skullBlock = selectedGraveSite.getLocation().getBlock();
+        skullBlock.setType(Material.PLAYER_HEAD);
+
+        BlockState state = skullBlock.getState();
+        if (state instanceof Skull skull) {
+            Grave grave = event.getGrave();
+            String headName = plugin.getGravesX().getConfig("block.head.name", grave).getString("block.head.name");
+            String headBase64 = plugin.getGravesX().getConfig("block.head.base64", grave).getString("block.head.base64");
+            switch (plugin.getGravesX().getConfig("block.head.type", grave).getInt("block.head.type")) {
+                case 1:
+                    SkinAPI.setSkullTexture(skull, headName, headBase64);
+                    break;
+                case 2:
+                    if (grave.getOwnerType() == EntityType.PLAYER) {
+                        try {
+                            skull.setOwningPlayer(plugin.getServer().getOfflinePlayer(grave.getOwnerUUID()));
+                        } catch (Exception e) {
+                            skull.setOwner(grave.getOwnerName());
+                        }
+                    }
+                    break;
+                case 0:
+                default:
+                    if (grave.getOwnerType() == EntityType.PLAYER) {
+                        try {
+                            skull.setOwningPlayer(plugin.getServer().getOfflinePlayer(grave.getOwnerUUID()));
+                        } catch (Exception e) {
+                            skull.setOwner(grave.getOwnerName());
+                        }
+                    } else if (grave.getOwnerTexture() != null) {
+                        SkinAPI.setSkullTexture(skull, grave.getOwnerName(), grave.getOwnerTexture());
+                    } else if (headBase64 != null && !headBase64.isEmpty()) {
+                        SkinAPI.setSkullTexture(skull, grave.getOwnerName(), headBase64);
                     }
 
-                    // Mark decorative site as occupied
-                    plugin.getCacheManager().updateGraveSiteOccupancy(graveyardName, selectedGraveSite.getLocation(), true);
-                    selectedGraveSite.setOccupied(true);
-
-                    player.sendMessage(ChatColor.GRAY + "☠ " + ChatColor.RED + "A symbolic grave was created in " + ChatColor.GOLD + graveyardName);
-                    plugin.getGravesX().debugMessage("Decorative grave created for " + player.getName() + " at " + selectedGraveSite.getLocation(), 2);
-                }
             }
+
+            skull.getPersistentDataContainer().set(graveHeadKey, PersistentDataType.BYTE, (byte) 1);
+            skull.update();
         }
+
+        plugin.getCacheManager().updateGraveSiteOccupancy(graveyardName, selectedGraveSite.getLocation(), true);
+        selectedGraveSite.setOccupied(true);
+
+        String okMsg = cfg.getMessage("graveyard-place-successful")
+                .replace("%graveyard%", graveyardName);
+        player.sendMessage(okMsg);
+
+        plugin.getGravesX().debugMessage(
+                "Decorative grave created for " + player.getName() + " at " + selectedGraveSite.getLocation(), 2);
     }
 
     private String getAnyAvailableGraveyard() {
@@ -93,5 +144,28 @@ public class EntityDeathListener implements Listener {
             if (hasAvailable) return entry.getKey();
         }
         return null;
+    }
+
+    private String pickAnyGraveyardName() {
+        for (String name : plugin.getCacheManager().getAllGraveyards().keySet()) {
+            return name;
+        }
+        return null;
+    }
+
+    /** Sets ALL gravesites in the given graveyard to unoccupied = false (both cache + in-memory objects). */
+    private void resetAllSitesIn(String graveyardName) {
+        List<GraveSite> sites = plugin.getCacheManager().getGraveSites(graveyardName);
+        if (sites == null || sites.isEmpty()) return;
+
+        int count = 0;
+        for (GraveSite site : sites) {
+            if (site.isOccupied()) {
+                plugin.getCacheManager().updateGraveSiteOccupancy(graveyardName, site.getLocation(), false);
+                site.setOccupied(false);
+                count++;
+            }
+        }
+        plugin.getGravesX().debugMessage("Reset " + count + " occupied graves in '" + graveyardName + "'.", 1);
     }
 }

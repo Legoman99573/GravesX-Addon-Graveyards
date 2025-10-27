@@ -1,32 +1,102 @@
 package dev.cwhead.GravesXAddon.graveyards.util;
 
+import com.ranull.graves.integration.MiniMessage;
 import dev.cwhead.GravesXAddon.graveyards.Graveyards;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.util.Vector;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Utility class for configuration handling in the GravesX addon.
- * Manages the static folder /plugins/GravesX/addon/Graveyards and
- * provides helper methods for graveyard and gravesite CRUD.
+ * Manages:
+ *  - Static folder /plugins/GravesX/addon/Graveyards/graveyards-data (per-graveyard data)
+ *  - Global config at /plugins/GravesX/addon/Graveyards/config.yml (holograms, messages)
+ *  - Helper methods for graveyard and gravesite CRUD.
  */
 public final class ConfigUtil {
     private final Graveyards plugin;
+
+    private final File addonFolder;
     private final File graveyardFolder;
+    private final File globalConfigFile;
+
+    private YamlConfiguration globalConfig;
 
     public ConfigUtil(Graveyards plugin) {
         this.plugin = plugin;
 
-        this.graveyardFolder = new File("plugins/GravesX/addon/Graveyards");
+        this.addonFolder = new File("plugins/GravesX/addon/Graveyards");
+        if (!addonFolder.exists() && !addonFolder.mkdirs()) {
+            plugin.getLogger().warning("Failed to create addon folder at: " + addonFolder.getAbsolutePath());
+        }
 
+        this.graveyardFolder = new File(addonFolder, "graveyards-data");
         if (!graveyardFolder.exists() && !graveyardFolder.mkdirs()) {
             plugin.getLogger().warning("Failed to create graveyard folder at: " + graveyardFolder.getAbsolutePath());
         }
+
+        this.globalConfigFile = new File(addonFolder, "config.yml");
+        ensureGlobalConfigExists();
+        reloadGlobalConfig();
+    }
+
+    /**
+     * Re-reads /plugins/GravesX/addon/config.yml.
+     * Call this if you edit the file at runtime.
+     */
+    public void reloadGlobalConfig() {
+        this.globalConfig = YamlConfiguration.loadConfiguration(globalConfigFile);
+    }
+
+    /**
+     * Reads the config-version from the global config. Defaults to 1 if absent.
+     */
+    public int getConfigVersion() {
+        return globalConfig.getInt("config-version", 1);
+    }
+
+    /** Hologram base offset (relative to head block). */
+    public Vector getHologramBaseOffset() {
+        return readVector("graveyard-holograms.base-location-offset", new Vector(0, 0.5, 0));
+    }
+
+    /** Hologram new-line offset. */
+    public Vector getHologramNewLineOffset() {
+        return readVector("graveyard-holograms.new-line-offset", new Vector(0, 0.25, 0));
+    }
+
+    /** Hologram lines (colorized). */
+    public List<String> getHologramLines() {
+        List<String> raw = globalConfig.getStringList("graveyard-holograms.lines");
+        if (raw.isEmpty()) {
+            raw = Arrays.asList("&7Here Lies", "&6%player%");
+            warnMissing("graveyard-holograms.lines");
+        }
+        return colorize(raw);
+    }
+
+    /**
+     * Returns a colorized message from messages.* with the prefix applied.
+     * Example keys:
+     *  - "graveyard-place-successful"
+     *  - "graveyard-place-failed"
+     */
+    public String getMessage(String key) {
+        String prefix = globalConfig.getString("messages.prefix", "&7☠ ");
+        String body = globalConfig.getString("messages." + key, "");
+        if (body.isEmpty()) {
+            warnMissing("messages." + key);
+        }
+        return colorize(prefix + body);
     }
 
     public File getGraveyardFolder() {
@@ -68,9 +138,7 @@ public final class ConfigUtil {
         return saveConfig(config, file, "create graveyard '" + name + "'");
     }
 
-    /**
-     * Deletes the graveyard YAML.
-     */
+    /** Deletes the graveyard YAML. */
     public boolean deleteGraveyard(String name) {
         File file = getGraveyardFile(name);
         if (!file.exists()) {
@@ -84,9 +152,7 @@ public final class ConfigUtil {
         return ok;
     }
 
-    /**
-     * Creates or updates a gravesite in the specified graveyard file.
-     */
+    /** Creates or updates a gravesite in the specified graveyard file. */
     public boolean saveGraveSite(String graveyardName, int siteNumber, Location location, boolean occupied) {
         File file = getGraveyardFile(graveyardName);
         if (!file.exists()) {
@@ -139,9 +205,7 @@ public final class ConfigUtil {
         return saveConfig(config, file, "edit gravesite " + siteNumber + " in " + graveyardName);
     }
 
-    /**
-     * Removes a gravesite from the specified graveyard.
-     */
+    /** Removes a gravesite from the specified graveyard. */
     public boolean removeGraveSite(String graveyardName, int siteNumber) {
         File file = getGraveyardFile(graveyardName);
         if (!file.exists()) {
@@ -164,7 +228,7 @@ public final class ConfigUtil {
     /**
      * Scans the graveyard YAML and returns the next available site number.
      * If there are no sites yet, returns 1.
-     * If some numbers are missing in the middle, this returns (max + 1) for simplicity.
+     * If some numbers are missing in the middle, this returns (max + 1).
      */
     public int getNextSiteNumber(String graveyardName) {
         File file = getGraveyardFile(graveyardName);
@@ -190,9 +254,7 @@ public final class ConfigUtil {
         return max + 1;
     }
 
-    /**
-     * Lists all graveyard names (filenames without .yml) found in the folder.
-     */
+    /** Lists all graveyard names (filenames without .yml) found in the folder. */
     public List<String> listGraveyardNames() {
         File[] files = graveyardFolder.listFiles((dir, name) -> name.endsWith(".yml"));
         if (files == null || files.length == 0) return Collections.emptyList();
@@ -245,9 +307,7 @@ public final class ConfigUtil {
         return result;
     }
 
-    /**
-     * Reads all graveyards into a map: graveyard name -> list of GraveSite.
-     */
+    /** Reads all graveyards into a map: graveyard name -> list of GraveSite. */
     public Map<String, List<GraveSite>> readAllGraveyards() {
         Map<String, List<GraveSite>> map = new HashMap<>();
         for (String name : listGraveyardNames()) {
@@ -259,11 +319,6 @@ public final class ConfigUtil {
     /**
      * Sets the occupied flag for the gravesite that matches the given block location
      * in the specified graveyard YAML. Matches by world + block x/y/z.
-     *
-     * @param graveyardName name of the graveyard (file without .yml)
-     * @param location any Location; block coords are used for matching
-     * @param occupied new occupied state
-     * @return true if a matching site was found and updated, false otherwise
      */
     public boolean setGraveSiteOccupiedByLocation(String graveyardName, Location location, boolean occupied) {
         if (location == null || location.getWorld() == null) return false;
@@ -315,12 +370,79 @@ public final class ConfigUtil {
         }
     }
 
+    private void ensureGlobalConfigExists() {
+        try {
+            Files.createDirectories(addonFolder.toPath());
+
+            if (globalConfigFile.exists()) return;
+
+            File legacy = new File(plugin.getDataFolder(), "config.yml");
+            if (legacy.exists()) {
+                try {
+                    Files.createDirectories(globalConfigFile.toPath().getParent());
+                    Files.copy(legacy.toPath(), globalConfigFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    plugin.getLogger().info("Migrated legacy config.yml to " + globalConfigFile.getAbsolutePath());
+                    return;
+                } catch (IOException e) {
+                    plugin.getLogger().warning("Failed to migrate legacy config.yml: " + e.getMessage());
+                    // fall through to copy from resource
+                }
+            }
+
+            try (InputStream in = plugin.getResource("config.yml")) {
+                if (in == null) {
+                    plugin.getLogger().severe("Embedded config.yml not found in plugin JAR!");
+                    return;
+                }
+                Files.copy(in, globalConfigFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                plugin.getLogger().info("Wrote default config.yml to: " + globalConfigFile.getAbsolutePath());
+            }
+        } catch (IOException e) {
+            plugin.getLogger().severe("Unable to ensure global config.yml: " + e.getMessage());
+        }
+    }
+
+    private Vector readVector(String basePath, Vector def) {
+        double x = globalConfig.getDouble(basePath + ".x", def.getX());
+        double y = globalConfig.getDouble(basePath + ".y", def.getY());
+        double z = globalConfig.getDouble(basePath + ".z", def.getZ());
+        if (!globalConfig.contains(basePath)) {
+            warnMissing(basePath);
+        }
+        return new Vector(x, y, z);
+    }
+
+    private List<String> colorize(List<String> lines) {
+        return lines.stream().map(this::colorize).collect(Collectors.toList());
+    }
+
+    private String colorize(String s) {
+        String mainMessage = ChatColor.translateAlternateColorCodes('&', s == null ? "" : s);
+        if (hasMiniMessage()) {
+            mainMessage = MiniMessage.convertLegacyToMiniMessage(mainMessage);
+            return MiniMessage.parseString(mainMessage);
+        }
+        return mainMessage;
+    }
+
+    private void warnMissing(String path) {
+        plugin.getLogger().warning("Global config missing key: " + path + " (using default).");
+    }
+
     private boolean saveConfig(YamlConfiguration config, File file, String actionDescription) {
         try {
             config.save(file);
             return true;
         } catch (IOException e) {
             plugin.getLogger().severe("Failed to " + actionDescription + ": " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean hasMiniMessage() {
+        try {
+            return plugin.getGravesX().getIntegrationManager().hasMiniMessage();
+        } catch (Throwable t) {
             return false;
         }
     }

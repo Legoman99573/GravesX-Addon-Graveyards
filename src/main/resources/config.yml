@@ -1,0 +1,40 @@
+##############
+# Graveyards #
+##############
+
+# Do not change this
+config-version: 1
+
+#############
+# Holograms #
+#############
+graveyard-holograms:
+
+  # Offset from the head block
+  base-location-offset:
+    x: 0
+    y: 0.5
+    z: 0
+
+  # Offset for new lines
+  new-line-offset:
+    x: 0
+    y: 0.25
+    z: 0
+
+  # What to show on Holograms.
+  # %player% - Player
+  # %killer% - The killer. If not a player, it will return as Unknown
+  lines:
+    - "&7Here Lies"
+    - "&6%player%"
+    # - "&7Killer"
+    # - "&6%killer%"
+
+############
+# Messages #
+############
+messages:
+  prefix: "&7☠ "
+  graveyard-place-successful: "&cA symbolic grave was created in &6%graveyard%"
+  graveyard-place-failed: "&cNo available grave sites found in &6%graveyard%"
